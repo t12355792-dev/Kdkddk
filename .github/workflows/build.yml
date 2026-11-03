@@ -1,0 +1,37 @@
+name: Build mod
+on:
+  workflow_dispatch:
+    inputs:
+      zip:
+        description: "Имя zip-файла проекта в корне репозитория"
+        required: true
+        default: "havenmod-fabric-1.21.11.zip"
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: 9.2.0
+      - name: Unzip project
+        run: |
+          ls -la
+          mkdir -p proj
+          unzip -oq "${{ github.event.inputs.zip }}" -d proj
+      - name: Build
+        run: |
+          DIR=$(dirname "$(find proj -name build.gradle | head -1)")
+          echo "Building $DIR"
+          cd "$DIR"
+          gradle build --no-daemon
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mod-jar
+          path: |
+            proj/**/build/libs/*.jar
+            !proj/**/build/libs/*-sources.jar
